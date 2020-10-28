@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:doopdashboard/Screens/details_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
@@ -25,12 +26,15 @@ class _SignUpState extends State<SignUp> {
   TextEditingController passController = new TextEditingController();
   @override
   Widget build(BuildContext context) {
+    final GlobalKey<ScaffoldState> _scaffoldKey =
+        new GlobalKey<ScaffoldState>();
     double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Color(0xFF2e2d2d),
       body: SafeArea(
+        key: _scaffoldKey,
         child: ListView(
           children: [
             Padding(
@@ -63,8 +67,9 @@ class _SignUpState extends State<SignUp> {
             Form(
               key: _formKey,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(20, height / 7.5, 20, 0),
+                padding: EdgeInsets.fromLTRB(20, height / 15, 20, 0),
                 child: Card(
+                  color: Color(0xFFfab300),
                   child: Column(
                     children: [
                       Padding(
@@ -76,12 +81,54 @@ class _SignUpState extends State<SignUp> {
                               'JOIN NOW',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Colors.black,
                                 letterSpacing: 1.6,
                               ),
                             ),
                           ),
                         ),
+                      ),
+                      SizedBox(
+                        height: 15,
+                      ),
+                      Container(
+                        height: 100,
+                        width: 100,
+                        child: Stack(children: [
+                          Center(
+                              child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(50)),
+                            ),
+                            height: 100,
+                            width: 100,
+                            child: CircleAvatar(
+                              backgroundImage: NetworkImage(
+                                url,
+                              ),
+                            ),
+                          )),
+                          InkWell(
+                            onTap: () async {
+                              filePicker(context, this, _scaffoldKey);
+                            },
+                            child: Align(
+                              alignment: Alignment.bottomRight,
+                              child: Container(
+                                  height: 30,
+                                  width: 30,
+                                  decoration: BoxDecoration(
+                                      borderRadius:
+                                          BorderRadius.all(Radius.circular(15)),
+                                      color: Colors.black),
+                                  child: Icon(
+                                    Icons.upload_sharp,
+                                    color: Colors.white,
+                                  )),
+                            ),
+                          ),
+                        ]),
                       ),
                       Padding(
                         padding: EdgeInsets.fromLTRB(13, height / 25, 13, 10),
@@ -122,10 +169,14 @@ class _SignUpState extends State<SignUp> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () {
+                        onTap: () async {
                           if (_formKey.currentState.validate()) {
-                            _createUser(emailController.text,
+                            await _createUser(emailController.text,
                                 passController.text, context);
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => PersonalDetails()));
                           }
                         },
                         child: Padding(
@@ -133,11 +184,11 @@ class _SignUpState extends State<SignUp> {
                           child: Container(
                             height: height / 18,
                             decoration: BoxDecoration(
-                              color: Colors.black,
+                              color: Color(0xFF2e2d2d),
                               borderRadius: BorderRadius.circular(23),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: Colors.white.withOpacity(0.1),
                                   offset: const Offset(0, 1),
                                   blurRadius: 4,
                                   spreadRadius: 8,
@@ -210,7 +261,7 @@ class _SignUpState extends State<SignUp> {
     _auth
         .createUserWithEmailAndPassword(email: email, password: pw)
         .then((authResult) async {
-      FirebaseUser user = await FirebaseAuth.instance.currentUser;
+      FirebaseUser user = await FirebaseAuth.instance.currentUser();
       user.sendEmailVerification();
       Fluttertoast.showToast(
           msg: 'Verification link has been sent to your email address!',
@@ -347,7 +398,7 @@ class _SignUpState extends State<SignUp> {
   void _uploadFile(File file, String filename, context, state, key) async {
     final FirebaseStorage _storage =
         FirebaseStorage(storageBucket: 'gs://doopdashboard.appspot.com/');
-    FirebaseUser user = await FirebaseAuth.instance.currentUser;
+    FirebaseUser user = await FirebaseAuth.instance.currentUser();
 
     StorageReference storageReference;
     storageReference = _storage
